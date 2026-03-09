@@ -27,5 +27,23 @@ services:
       timeout: 5s
       retries: 5
 
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: probe_server
+    restart: unless-stopped
+    ports: ["3000:3000"]
+    env_file: ./server/.env
+    environment:
+      DATABASE_URL: postgresql://probe:probepass@postgres:5432/probe
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres_data:
