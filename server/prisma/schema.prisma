@@ -82,7 +82,7 @@ model PRReview {
 model ReviewFinding {
   id              String        @id @default(cuid())  
   reviewId        String
-  category        FindingCategory
+  category        String
   severity        Severity
   filePath        String
   lineNumber      Int?
@@ -123,12 +123,4 @@ enum ReviewStatus    {
   PROCESSING  
   COMPLETED  
   FAILED 
-  }
-enum FindingCategory { 
-  BUG  
-  SECURITY  
-  PERFORMANCE  
-  STYLE  
-  TESTS  
-  DOCUMENTATION 
   }
