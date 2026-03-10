@@ -50,3 +50,139 @@ export async function fetchPRDiff(params: {
 
   return fullDiff;
 }
+// Post PR Comment
+export async function postPRComment(params: {
+  owner: string;
+  repo: string;
+  prNumber: number;
+  repoId: string;
+  review: AIReview;
+}): Promise<number> {
+  const octokit = await getOctokitForRepo(params.repoId);
+  const { review } = params;
+
+  const severityEmoji: Record<string, string> = {
+    CRITICAL: "🔴",
+    WARNING: "🟡",
+    SUGGESTION: "💡",
+    CLEAN: "🟢",
+  };
+
+  const criticals = review.findings.filter((f) => f.severity === "CRITICAL");
+  const warnings = review.findings.filter((f) => f.severity === "WARNING");
+  const suggestions = review.findings.filter(
+    (f) => f.severity === "SUGGESTION",
+  );
+
+  const formatFinding = (f: AIReview["findings"][0]): string => {
+    const emoji = severityEmoji[f.severity] ?? "⚪";
+    const loc = f.lineNumber ? `${f.filePath}:${f.lineNumber}` : f.filePath;
+
+    let block = `> **${emoji} ${f.severity}**  \`${f.category}\`  ·  \`${loc}\`\n> ${f.description}`;
+    if (f.suggestion) {
+      block += `\n>\n> 💡 **Fix:** \`${f.suggestion}\``;
+    }
+    return block;
+  };
+
+  const overallEmoji = severityEmoji[review.overallSeverity] ?? "⚪";
+
+  let body = [
+    `## 🔍 PRobe — Automated Code Review`,
+    ``,
+    `**Overall:** ${overallEmoji} **${review.overallSeverity}**  ·  ${review.findings.length} issue(s)`,
+    ``,
+    `---`,
+    ``,
+    `### 📋 Summary`,
+    review.summary,
+  ].join("\n");
+
+  if (criticals.length) {
+    body += `\n\n### 🔴 Critical (${criticals.length})\n${criticals.map(formatFinding).join("\n\n")}`;
+  }
+  if (warnings.length) {
+    body += `\n\n### 🟡 Warnings (${warnings.length})\n${warnings.map(formatFinding).join("\n\n")}`;
+  }
+  if (suggestions.length) {
+    body += `\n\n### 💡 Suggestions (${suggestions.length})\n${suggestions.map(formatFinding).join("\n\n")}`;
+  }
+  if (!review.findings.length) {
+    body += `\n\n### 🟢 No Issues Found\nThis PR looks clean!`;
+  }
+
+  body += `\n\n---\n*Reviewed by [PRobe](${process.env.FRONTEND_URL}) · Powered by Gemini*`;
+  const { data } = await octokit.rest.issues.createComment({
+    owner: params.owner,
+    repo: params.repo,
+    issue_number: params.prNumber,
+    body,
+  });
+
+  logger.info(
+    {
+      repo: `${params.owner}/${params.repo}`,
+      pr: params.prNumber,
+      commentId: data.id,
+    },
+    `Posted PR comment`,
+  );
+
+  return data.id;
+}
+
+// Install Webhook
+export async function installWebhook(params: {
+  owner: string;
+  repo: string;
+  repoId: string;
+}): Promise<number> {
+  const octokit = await getOctokitForRepo(params.repoId);
+
+  const { data } = await octokit.rest.repos.createWebhook({
+    owner: params.owner,
+    repo: params.repo,
+    config: {
+      url: `${process.env.BACKEND_URL}/api/webhook/github`,
+      content_type: "json",
+      secret: process.env.GITHUB_WEBHOOK_SECRET!,
+      insecure_ssl: "0",
+    },
+    events: ["pull_request"],
+    active: true,
+  });
+
+  logger.info(
+    {
+      repo: `${params.owner}/${params.repo}`,
+      webhookId: data.id,
+    },
+    `Installed webhook`,
+  );
+
+  return data.id;
+}
+
+// Remove Webhook
+export async function removeWebhook(params: {
+  owner: string;
+  repo: string;
+  repoId: string;
+  webhookId: number;
+}): Promise<void> {
+  const octokit = await getOctokitForRepo(params.repoId);
+
+  await octokit.rest.repos.deleteWebhook({
+    owner: params.owner,
+    repo: params.repo,
+    hook_id: params.webhookId,
+  });
+
+  logger.info(
+    {
+      repo: `${params.owner}/${params.repo}`,
+      webhookId: params.webhookId,
+    },
+    `Removed webhook`,
+  );
+}
