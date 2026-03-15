@@ -71,6 +71,7 @@ model PRReview {
   repository      Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
   findings        ReviewFinding[]
   feedback        ReviewFeedback[]
+  @@unique([repositoryId, prNumber]) 
   @@index([repositoryId])
   @@index([status])
   @@index([createdAt])
