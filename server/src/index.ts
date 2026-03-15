@@ -7,6 +7,7 @@ import "dotenv/config";
 import { ErrorHandler } from "./middleware/error";
 import pinoHttp from "pino-http";
 import logger from "./lib/logger";
+import router from "./routes";
 
 const PORT = process.env.PORT || 3000;
 
@@ -27,6 +28,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+app.use("/api/webhook", express.raw({ type: "application/json" }));
 app.use(express.json({ limit: "10mb" }));
 app.use(clerkMiddleware());
 
@@ -43,9 +45,7 @@ app.use(
   }),
 );
 
-app.get("/test", (_req, res) => {
-  res.json({ status: "ok", ts: new Date().toISOString() });
-});
+app.use("/api", router);
 
 app.use((_req, res) => {
   res.status(404).json({
