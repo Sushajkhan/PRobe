@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import webhookRouter from "./webhook.routes";
+import authRouter from "./auth.routes";
 
 const router = Router();
 
@@ -8,5 +9,6 @@ router.get("/test", (req: Request, res: Response) => {
 });
 
 router.use("/webhook", webhookRouter);
+router.use("/auth", authRouter);
 
 export default router;
