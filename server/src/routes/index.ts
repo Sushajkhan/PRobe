@@ -3,6 +3,7 @@ import webhookRouter from "./webhook.routes";
 import authRouter from "./auth.routes";
 import repoRouter from "./repo.routes";
 import reviewRouter from "./review.routes";
+import analyticsRouter from "./analytics.routes";
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use("/webhook", webhookRouter);
 router.use("/auth", authRouter);
 router.use("/repos", repoRouter);
 router.use("/reviews", reviewRouter);
+router.use("/analytics", analyticsRouter);
 
 export default router;
