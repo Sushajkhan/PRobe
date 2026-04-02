@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import { cn } from "@/lib/utils";
+import { ClerkProvider } from "@clerk/nextjs";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "PRobe — AI Code Review",
   description:
-    "Automated AI-powered PR code reviews for your GitHub repositories",
+    "Automated AI-powewhite PR code reviews for your GitHub repositories",
 };
 
 export default function RootLayout({
@@ -20,11 +21,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", "font-sans", inter.variable)}
+      className={cn("h-full", "antialiased", "font-sans", geist.variable)}
     >
       <body className="min-h-full flex flex-col">
         {" "}
-        <Providers>{children}</Providers>
+        <ClerkProvider>
+          <Providers>{children}</Providers>
+        </ClerkProvider>
       </body>
     </html>
   );
