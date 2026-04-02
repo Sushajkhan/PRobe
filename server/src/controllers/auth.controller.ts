@@ -15,9 +15,8 @@ export async function connectGithub(
   }
 
   const clerkUser = await clerkClient.users.getUser(userId);
-
   const githubAccount = clerkUser.externalAccounts.find(
-    (account) => account.provider === "github",
+    (account) => account.provider === "oauth_github",
   );
 
   if (!githubAccount) {
