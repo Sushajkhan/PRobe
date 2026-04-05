@@ -115,7 +115,7 @@ async function processReview(job: Job<PRReviewJobData>): Promise<void> {
     where: { id: reviewId },
     data: {
       status: "COMPLETED",
-      githubCommentId: commentId,
+      githubCommentId: commentId.toString(),
       processingTime,
     },
   });

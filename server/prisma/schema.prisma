@@ -64,7 +64,7 @@ model PRReview {
   overallSeverity Severity   @default(CLEAN)
   status          ReviewStatus   @default(QUEUED)
   processingTime  Int?
-  githubCommentId Int?
+  githubCommentId String?
   totalIssues     Int        @default(0)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
