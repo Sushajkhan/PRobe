@@ -84,6 +84,19 @@ export interface ReviewsOverTimePoint {
   count: number;
 }
 
-export interface ApiError {
-  error: string;
+export interface GithubRepository {
+  githubRepoId: string;
+  name: string;
+  fullName: string;
+  owner: string;
+  defaultBranch: string;
+  private: boolean;
+  description: string | null;
+  url: string;
+  isConnected: boolean;
+}
+
+export interface ConnectRepoResponse extends Repository {
+  webhookFailed?: boolean;
+  message?: string;
 }
