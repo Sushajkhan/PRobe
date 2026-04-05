@@ -17,6 +17,10 @@ export async function listReviews(req: Request, res: Response): Promise<void> {
 
   const status = req.query.status ? String(req.query.status) : undefined;
   const severity = req.query.severity ? String(req.query.severity) : undefined;
+  const repositoryId = req.query.repositoryId
+    ? String(req.query.repositoryId)
+    : undefined;
+  const search = req.query.search ? String(req.query.search) : undefined;
 
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },
@@ -36,14 +40,25 @@ export async function listReviews(req: Request, res: Response): Promise<void> {
   const repoIds = userRepos.map((r) => r.id);
 
   if (repoIds.length === 0) {
-    res.status(200).json({ reviews: [], total: 0, page, limit });
+    res.status(200).json({ reviews: [], total: 0, page, limit, totalPages: 0 });
+    return;
+  }
+
+  if (repositoryId && !repoIds.includes(repositoryId)) {
+    res.status(403).json({ error: "Repository not found" });
     return;
   }
 
   const where = {
-    repositoryId: { in: repoIds },
+    repositoryId: repositoryId ? { equals: repositoryId } : { in: repoIds },
     ...(status && { status: status as any }),
     ...(severity && { overallSeverity: severity as any }),
+    ...(search && {
+      OR: [
+        { title: { contains: search, mode: "insensitive" as const } },
+        { author: { contains: search, mode: "insensitive" as const } },
+      ],
+    }),
   };
 
   const [total, reviews] = await Promise.all([
