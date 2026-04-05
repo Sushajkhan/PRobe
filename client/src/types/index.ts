@@ -100,3 +100,11 @@ export interface ConnectRepoResponse extends Repository {
   webhookFailed?: boolean;
   message?: string;
 }
+
+export interface ReviewsResponse {
+  reviews: PRReview[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
