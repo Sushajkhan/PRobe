@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "./providers";
 import { cn } from "@/lib/utils";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "@/components/ui/sonner";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -28,6 +29,18 @@ export default function RootLayout({
         <ClerkProvider>
           <Providers>{children}</Providers>
         </ClerkProvider>
+        <Toaster
+          theme="light"
+          position="top-right"
+          toastOptions={{
+            classNames: {
+              success: "[&>[data-icon]]:text-emerald-500",
+              error: "[&>[data-icon]]:text-red-500",
+              warning: "[&>[data-icon]]:text-amber-500",
+              info: "[&>[data-icon]]:text-blue-400",
+            },
+          }}
+        />{" "}
       </body>
     </html>
   );
