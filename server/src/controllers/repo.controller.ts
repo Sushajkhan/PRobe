@@ -140,7 +140,7 @@ export async function connectRepo(req: Request, res: Response): Promise<void> {
 
   if (!githubRepoId || !name || !fullName || !owner) {
     res.status(400).json({
-      error: "Missing required fields: githubRepoId, name, fullName, owner",
+      error: "Missing required fields",
     });
     return;
   }
@@ -161,27 +161,41 @@ export async function connectRepo(req: Request, res: Response): Promise<void> {
   });
 
   if (existing) {
-    // If it exists but was deactivated — reactivate it instead of 409
+    // Retry webhook if inactive
     if (!existing.isActive) {
-      const reactivated = await prisma.repository.update({
-        where: { id: existing.id },
-        data: { isActive: true },
-      });
-      logger.info({ repoId: existing.id, fullName }, "Repo reactivated");
-      res.status(200).json(reactivated);
-      return;
+      try {
+        const webhookId = await installWebhook({
+          owner: existing.owner,
+          repo: existing.name,
+          repoId: existing.id,
+        });
+
+        const updated = await prisma.repository.update({
+          where: { id: existing.id },
+          data: { isActive: true, webhookId },
+        });
+
+        res.status(200).json(updated);
+        return;
+      } catch (err: any) {
+        res.status(200).json({
+          ...existing,
+          isActive: false,
+          webhookFailed: true,
+          message: "Webhook retry failed",
+        });
+        return;
+      }
     }
+
     res.status(409).json({ error: "Repository is already connected" });
     return;
   }
 
-  // Create the record before installing the webhook.
-  // If webhook install fails, the repo is still in the DB and the
-  // user can see it and retry — no silent data loss.
-
+  // Create repo first
   const repo = await prisma.repository.create({
     data: {
-      userId,
+      userId: user.id,
       githubRepoId,
       name,
       fullName,
@@ -191,7 +205,7 @@ export async function connectRepo(req: Request, res: Response): Promise<void> {
     },
   });
 
-  //Install webhook on GitHub
+  // Install webhook
   try {
     const webhookId = await installWebhook({
       owner,
@@ -199,34 +213,23 @@ export async function connectRepo(req: Request, res: Response): Promise<void> {
       repoId: repo.id,
     });
 
-    // Save webhookId — needed to delete the webhook on disconnect
     const updated = await prisma.repository.update({
       where: { id: repo.id },
       data: { webhookId },
     });
 
-    logger.info(
-      { repoId: repo.id, fullName, webhookId },
-      "Repo connected successfully",
-    );
-
     res.status(201).json(updated);
-  } catch (webhookErr: any) {
-    // Webhook install failed — mark inactive so the dashboard shows reconnect state rather than appearing connected with no webhook.
-    await prisma.repository.update({
+  } catch (err: any) {
+    const updated = await prisma.repository.update({
       where: { id: repo.id },
       data: { isActive: false },
     });
 
-    logger.error(
-      { repoId: repo.id, fullName, error: webhookErr.message },
-      "Webhook install failed",
-    );
-
-    res.status(500).json({
-      error:
-        "Repository saved but webhook installation failed. Please try reconnecting.",
-      repoId: repo.id,
+    res.status(200).json({
+      ...updated,
+      webhookFailed: true,
+      message:
+        "Repository connected, but webhook installation failed. Please retry.",
     });
   }
 }
@@ -239,7 +242,7 @@ export async function toggleRepo(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const id: string = String(req.params.id);
+  const id = String(req.params.id);
 
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },
@@ -260,17 +263,63 @@ export async function toggleRepo(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const updated = await prisma.repository.update({
-    where: { id },
-    data: { isActive: !repo.isActive },
-  });
+  const activating = !repo.isActive;
 
-  logger.info(
-    { repoId: id, fullName: repo.fullName, isActive: updated.isActive },
-    "Repo toggled",
-  );
+  if (activating) {
+    try {
+      let webhookId = repo.webhookId;
 
-  res.status(200).json(updated);
+      if (!webhookId) {
+        webhookId = await installWebhook({
+          owner: repo.owner,
+          repo: repo.name,
+          repoId: repo.id,
+        });
+      }
+
+      const updated = await prisma.repository.update({
+        where: { id },
+        data: { isActive: true, webhookId },
+      });
+
+      logger.info({ repoId: id, fullName: repo.fullName }, "Repo activated");
+
+      res.status(200).json(updated);
+    } catch (err: any) {
+      logger.error(
+        { repoId: id, error: err.message },
+        "Webhook install failed on activation",
+      );
+
+      res.status(500).json({
+        error: "Failed to activate repository",
+      });
+    }
+
+    return;
+  }
+
+  try {
+    const updated = await prisma.repository.update({
+      where: { id },
+      data: {
+        isActive: false,
+      },
+    });
+
+    logger.info({ repoId: id, fullName: repo.fullName }, "Repo deactivated");
+
+    res.status(200).json(updated);
+  } catch (err: any) {
+    logger.error(
+      { repoId: id, error: err.message },
+      "Failed to deactivate repo",
+    );
+
+    res.status(500).json({
+      error: "Failed to deactivate repository",
+    });
+  }
 }
 
 export async function disconnectRepo(

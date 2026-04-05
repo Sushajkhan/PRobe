@@ -138,31 +138,49 @@ export async function installWebhook(params: {
   repoId: string;
 }): Promise<number> {
   const octokit = await getOctokitForRepo(params.repoId);
+  const webhookUrl = `${process.env.BACKEND_URL}/api/webhook/github`;
 
-  const { data } = await octokit.rest.repos.createWebhook({
-    owner: params.owner,
-    repo: params.repo,
-    config: {
-      url: `${process.env.BACKEND_URL}/api/webhook/github`,
-      content_type: "json",
-      secret: process.env.GITHUB_WEBHOOK_SECRET!,
-      insecure_ssl: "0",
-    },
-    events: ["pull_request"],
-    active: true,
-  });
+  try {
+    const { data } = await octokit.rest.repos.createWebhook({
+      owner: params.owner,
+      repo: params.repo,
+      config: {
+        url: webhookUrl,
+        content_type: "json",
+        secret: process.env.GITHUB_WEBHOOK_SECRET!,
+        insecure_ssl: "0",
+      },
+      events: ["pull_request"],
+      active: true,
+    });
 
-  logger.info(
-    {
-      repo: `${params.owner}/${params.repo}`,
-      webhookId: data.id,
-    },
-    `Installed webhook`,
-  );
+    logger.info(
+      { repo: `${params.owner}/${params.repo}`, webhookId: data.id },
+      "Installed webhook",
+    );
 
-  return data.id;
+    return data.id;
+  } catch (err: any) {
+    if (err.status === 422) {
+      const { data: hooks } = await octokit.rest.repos.listWebhooks({
+        owner: params.owner,
+        repo: params.repo,
+      });
+
+      const existing = hooks.find((h) => h.config?.url === webhookUrl);
+
+      if (existing) {
+        logger.info(
+          { repo: `${params.owner}/${params.repo}`, webhookId: existing.id },
+          "Webhook already exists — reusing existing",
+        );
+        return existing.id;
+      }
+    }
+
+    throw err;
+  }
 }
-
 // Remove Webhook
 export async function removeWebhook(params: {
   owner: string;
