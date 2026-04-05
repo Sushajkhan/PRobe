@@ -1,4 +1,11 @@
-import type { GithubRepository, Repository, UserProfile } from "@/types";
+import type {
+  GithubRepository,
+  PRReview,
+  Repository,
+  ReviewFinding,
+  ReviewsResponse,
+  UserProfile,
+} from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -51,4 +58,51 @@ export const api = {
     repoId: string,
   ): Promise<{ message: string }> =>
     apiRequest(`/api/repos/${repoId}`, token, { method: "DELETE" }),
+
+  getRepoReviews: (
+    token: string,
+    repoId: string,
+    params?: { page?: number; limit?: number },
+  ): Promise<ReviewFinding> => {
+    const q = new URLSearchParams(params as Record<string, string>).toString();
+    return apiRequest(`/api/repos/${repoId}/reviews${q ? `?${q}` : ""}`, token);
+  },
+
+  getReviews: (
+    token: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      severity?: string;
+      repositoryId?: string;
+      search?: string;
+    },
+  ): Promise<ReviewsResponse> => {
+    const q = new URLSearchParams(
+      Object.fromEntries(
+        Object.entries(params ?? {}).filter(([, v]) => v !== undefined),
+      ) as Record<string, string>,
+    ).toString();
+    return apiRequest(`/api/reviews${q ? `?${q}` : ""}`, token);
+  },
+
+  getReview: (token: string, reviewId: string): Promise<PRReview> =>
+    apiRequest(`/api/reviews/${reviewId}`, token),
+
+  deleteReview: (
+    token: string,
+    reviewId: string,
+  ): Promise<{ message: string }> =>
+    apiRequest(`/api/reviews/${reviewId}`, token, { method: "DELETE" }),
+
+  submitFeedback: (
+    token: string,
+    reviewId: string,
+    isHelpful: boolean,
+  ): Promise<{ reviewId: string; isHelpful: boolean }> =>
+    apiRequest(`/api/reviews/${reviewId}/feedback`, token, {
+      method: "POST",
+      body: JSON.stringify({ isHelpful }),
+    }),
 };
