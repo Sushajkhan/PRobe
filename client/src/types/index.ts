@@ -49,6 +49,7 @@ export interface PRReview {
   updatedAt: string;
   repository: Repository;
   findings: ReviewFinding[];
+  userFeedback: boolean | null;
 }
 
 export interface ReviewFinding {
