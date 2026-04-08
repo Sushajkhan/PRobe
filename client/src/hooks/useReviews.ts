@@ -55,6 +55,9 @@ export function useDeleteReview() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
+      queryClient.invalidateQueries({
+        queryKey: ["analytics", "overview"],
+      });
     },
   });
 }

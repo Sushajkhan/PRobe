@@ -54,6 +54,9 @@ export function useConnectRepo() {
       repoName: string;
     }) => {
       queryClient.invalidateQueries({ queryKey: ["repos", "connected"] });
+      queryClient.invalidateQueries({
+        queryKey: ["analytics", "overview"],
+      });
 
       if (result?.webhookFailed) {
         toast.warning(`Added ${repoName}, but activation failed`, {
@@ -111,10 +114,17 @@ export function useDisconnectRepo() {
       if (!token) throw new Error("No token");
       return api.disconnectRepo(token, repoId);
     },
-    onSuccess: () => {
+    onSuccess: (_, repoId) => {
       queryClient.invalidateQueries({ queryKey: ["repos", "connected"] });
+      queryClient.invalidateQueries({
+        queryKey: ["analytics", "overview"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["analytics", "repo", repoId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
       toast.success("Repository disconnected", {
-        description: "Webhook removed. No more reviews for this repository.",
+        description: "No more reviews for this repository.",
       });
     },
     onError: (err: Error) => {
