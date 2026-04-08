@@ -9,7 +9,7 @@ import {
 const router = Router();
 
 router.get("/overview", requireAuth(), getOverview);
-router.get("/repos/:repoId", requireAuth(), getRepoAnalytics);
+router.get("/repos", requireAuth(), getRepoAnalytics);
 router.get("/findings", requireAuth(), getTopFindings);
 
 export default router;

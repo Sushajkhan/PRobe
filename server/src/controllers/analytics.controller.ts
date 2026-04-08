@@ -37,9 +37,17 @@ export async function getOverview(req: Request, res: Response): Promise<void> {
       categoryCounts: {},
       statusCounts: { QUEUED: 0, PROCESSING: 0, COMPLETED: 0, FAILED: 0 },
       recentReviews: [],
+      reviewsThisWeek: 0,
+      criticalThisWeek: 0,
+      findingsThisWeek: 0,
+      reviewedToday: 0,
     });
     return;
   }
+
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const [
     totalReviews,
@@ -48,6 +56,10 @@ export async function getOverview(req: Request, res: Response): Promise<void> {
     categoryGroups,
     statusGroups,
     recentReviews,
+    reviewsThisWeek,
+    criticalThisWeek,
+    findingsThisWeek,
+    reviewedToday,
   ] = await Promise.all([
     prisma.pRReview.count({
       where: { repositoryId: { in: repoIds } },
@@ -93,6 +105,35 @@ export async function getOverview(req: Request, res: Response): Promise<void> {
         },
       },
     }),
+
+    prisma.pRReview.count({
+      where: {
+        repositoryId: { in: repoIds },
+        createdAt: { gte: weekAgo },
+      },
+    }),
+
+    prisma.reviewFinding.count({
+      where: {
+        severity: "CRITICAL",
+        review: { repositoryId: { in: repoIds } },
+        createdAt: { gte: weekAgo },
+      },
+    }),
+
+    prisma.reviewFinding.count({
+      where: {
+        review: { repositoryId: { in: repoIds } },
+        createdAt: { gte: weekAgo },
+      },
+    }),
+
+    prisma.pRReview.count({
+      where: {
+        repositoryId: { in: repoIds },
+        createdAt: { gte: todayStart },
+      },
+    }),
   ]);
 
   const severityCounts = severityGroups.reduce(
@@ -123,7 +164,7 @@ export async function getOverview(req: Request, res: Response): Promise<void> {
   );
 
   logger.info(
-    { userId, totalReviews, totalFindings },
+    { userId, totalReviews, totalFindings, reviewsThisWeek, reviewedToday },
     "Fetched analytics overview",
   );
 
@@ -135,21 +176,29 @@ export async function getOverview(req: Request, res: Response): Promise<void> {
     categoryCounts,
     statusCounts,
     recentReviews,
+    reviewsThisWeek,
+    criticalThisWeek,
+    findingsThisWeek,
+    reviewedToday,
   });
 }
 
 // Per-repo analytics
+
 export async function getRepoAnalytics(
   req: Request,
   res: Response,
 ): Promise<void> {
   const { userId } = getAuth(req);
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  const repoId: string = String(req.params.repoId);
+  const repoId =
+    (req.params.repoId as string | undefined) ||
+    (req.query.repoId as string | undefined);
 
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },
@@ -161,13 +210,41 @@ export async function getRepoAnalytics(
     return;
   }
 
-  const repo = await prisma.repository.findFirst({
-    where: { id: repoId, userId: user.id },
+  const repos = await prisma.repository.findMany({
+    where: { userId: user.id },
+    select: { id: true, name: true, fullName: true },
   });
 
-  if (!repo) {
-    res.status(404).json({ error: "Repository not found" });
+  if (repos.length === 0) {
+    res.status(200).json({
+      repo: null,
+      totalReviews: 0,
+      totalFindings: 0,
+      severityCounts: { CRITICAL: 0, WARNING: 0, SUGGESTION: 0 },
+      categoryCounts: {},
+      trend: [],
+      topProblematicFiles: [],
+    });
     return;
+  }
+
+  const repoIds = repoId ? [repoId] : repos.map((r) => r.id);
+
+  let repo: { id: string; name: string; fullName: string } | null = null;
+
+  if (repoId) {
+    const found = repos.find((r) => r.id === repoId);
+
+    if (!found) {
+      res.status(404).json({ error: "Repository not found" });
+      return;
+    }
+
+    repo = {
+      id: found.id,
+      name: found.name,
+      fullName: found.fullName,
+    };
   }
 
   const [
@@ -179,28 +256,40 @@ export async function getRepoAnalytics(
     topFiles,
   ] = await Promise.all([
     prisma.pRReview.count({
-      where: { repositoryId: repoId, status: "COMPLETED" },
+      where: {
+        repositoryId: { in: repoIds },
+        status: "COMPLETED",
+      },
     }),
 
     prisma.reviewFinding.count({
-      where: { review: { repositoryId: repoId } },
+      where: {
+        review: { repositoryId: { in: repoIds } },
+      },
     }),
 
     prisma.reviewFinding.groupBy({
       by: ["severity"],
-      where: { review: { repositoryId: repoId } },
+      where: {
+        review: { repositoryId: { in: repoIds } },
+      },
       _count: { severity: true },
     }),
 
     prisma.reviewFinding.groupBy({
       by: ["category"],
-      where: { review: { repositoryId: repoId } },
+      where: {
+        review: { repositoryId: { in: repoIds } },
+      },
       _count: { category: true },
       orderBy: { _count: { category: "desc" } },
     }),
 
     prisma.pRReview.findMany({
-      where: { repositoryId: repoId, status: "COMPLETED" },
+      where: {
+        repositoryId: { in: repoIds },
+        status: "COMPLETED",
+      },
       orderBy: { createdAt: "desc" },
       take: 10,
       select: {
@@ -215,7 +304,9 @@ export async function getRepoAnalytics(
 
     prisma.reviewFinding.groupBy({
       by: ["filePath"],
-      where: { review: { repositoryId: repoId } },
+      where: {
+        review: { repositoryId: { in: repoIds } },
+      },
       _count: { filePath: true },
       orderBy: { _count: { filePath: "desc" } },
       take: 10,
@@ -246,16 +337,17 @@ export async function getRepoAnalytics(
   }));
 
   logger.info(
-    { userId, repoId, totalReviews, totalFindings },
-    "Fetched repo analytics",
+    {
+      userId,
+      repoId: repoId ?? "ALL",
+      totalReviews,
+      totalFindings,
+    },
+    "Fetched analytics",
   );
 
   res.status(200).json({
-    repo: {
-      id: repo.id,
-      name: repo.name,
-      fullName: repo.fullName,
-    },
+    repo,
     totalReviews,
     totalFindings,
     severityCounts,
