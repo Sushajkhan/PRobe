@@ -2,6 +2,14 @@ export type Severity = "CRITICAL" | "WARNING" | "SUGGESTION" | "CLEAN";
 
 export type ReviewStatus = "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED";
 
+export type FindingCategory =
+  | "Security"
+  | "Performance"
+  | "Bug Risk"
+  | "Code Quality"
+  | "Maintainability"
+  | "Best Practice";
+
 export interface UserProfile {
   id: string;
   clerkId: string;
@@ -108,4 +116,71 @@ export interface ReviewsResponse {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+export interface AnalyticsTrendItem {
+  id: string;
+  prNumber: number;
+  title: string;
+  overallSeverity: Severity;
+  totalIssues: number;
+  createdAt: string;
+}
+
+export interface TopProblematicFile {
+  filePath: string;
+  findingCount: number;
+}
+
+export interface RepoAnalyticsResponse {
+  repo: {
+    id: string;
+    name: string;
+    fullName: string;
+  } | null;
+  totalReviews: number;
+  totalFindings: number;
+  severityCounts: Record<Severity, number>;
+  categoryCounts: Record<string, number>;
+  trend: AnalyticsTrendItem[];
+  topProblematicFiles: TopProblematicFile[];
+}
+
+export interface FindingSummary {
+  title: string;
+  category: string;
+  severity: Severity;
+  occurrences: number;
+}
+
+export interface FindingsResponse {
+  findings: FindingSummary[];
+}
+
+export interface OverviewResponse {
+  totalRepos: number;
+  totalReviews: number;
+  totalFindings: number;
+  severityCounts: Partial<Record<Severity, number>>;
+  categoryCounts: Partial<Record<FindingCategory, number>>;
+  statusCounts: Record<ReviewStatus, number>;
+  recentReviews: OverviewRecentReview[];
+  reviewsThisWeek: number;
+  criticalThisWeek: number;
+  findingsThisWeek: number;
+  reviewedToday: number;
+}
+
+export interface OverviewRecentReview {
+  id: string;
+  prNumber: number;
+  title: string;
+  status: ReviewStatus;
+  overallSeverity: Severity;
+  totalIssues: number;
+  createdAt: string;
+  repository: {
+    name: string;
+    fullName: string;
+  };
 }

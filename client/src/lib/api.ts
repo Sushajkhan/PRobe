@@ -1,6 +1,9 @@
 import type {
+  FindingsResponse,
   GithubRepository,
+  OverviewResponse,
   PRReview,
+  RepoAnalyticsResponse,
   Repository,
   ReviewFinding,
   ReviewsResponse,
@@ -105,4 +108,24 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ isHelpful }),
     }),
+
+  getOverview: (token: string): Promise<OverviewResponse> =>
+    apiRequest("/api/analytics/overview", token),
+
+  getRepoAnalytics: (
+    token: string,
+    repoId?: string | null,
+  ): Promise<RepoAnalyticsResponse> => {
+    const params = new URLSearchParams();
+
+    if (repoId) {
+      params.set("repoId", repoId);
+    }
+
+    const query = params.toString();
+
+    return apiRequest(`/api/analytics/repos${query ? `?${query}` : ""}`, token);
+  },
+  getTopFindings: (token: string): Promise<FindingsResponse> =>
+    apiRequest("/api/analytics/findings", token),
 };
