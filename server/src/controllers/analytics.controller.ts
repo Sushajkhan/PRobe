@@ -369,6 +369,7 @@ export async function getTopFindings(
   }
 
   const limit = Math.min(20, parseInt(String(req.query.limit ?? "10"), 10));
+  const repoIdFilter = req.query.repoId ? String(req.query.repoId) : null;
 
   const user = await prisma.user.findUnique({
     where: { clerkId: userId },
@@ -392,9 +393,12 @@ export async function getTopFindings(
     return;
   }
 
+  const filteredRepoIds =
+    repoIdFilter && repoIds.includes(repoIdFilter) ? [repoIdFilter] : repoIds;
+
   const topFindings = await prisma.reviewFinding.groupBy({
     by: ["title", "category", "severity"],
-    where: { review: { repositoryId: { in: repoIds } } },
+    where: { review: { repositoryId: { in: filteredRepoIds } } },
     _count: { title: true },
     orderBy: { _count: { title: "desc" } },
     take: limit,

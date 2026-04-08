@@ -126,6 +126,21 @@ export const api = {
 
     return apiRequest(`/api/analytics/repos${query ? `?${query}` : ""}`, token);
   },
-  getTopFindings: (token: string): Promise<FindingsResponse> =>
-    apiRequest("/api/analytics/findings", token),
+  getTopFindings: (
+    token: string,
+    repoId?: string | null,
+  ): Promise<FindingsResponse> => {
+    const params = new URLSearchParams();
+
+    if (repoId) {
+      params.set("repoId", repoId);
+    }
+
+    const query = params.toString();
+
+    return apiRequest(
+      `/api/analytics/findings${query ? `?${query}` : ""}`,
+      token,
+    );
+  },
 };

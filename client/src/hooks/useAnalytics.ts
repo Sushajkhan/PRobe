@@ -34,15 +34,15 @@ export function useRepoAnalytics(repoId: string | null) {
   });
 }
 
-export function useTopFindings() {
+export function useTopFindings(repoId?: string | null) {
   const { getToken, isSignedIn } = useAuth();
 
   return useQuery({
-    queryKey: ["analytics", "findings"],
+    queryKey: ["analytics", "findings", repoId],
     queryFn: async () => {
       const token = await getToken();
       if (!token) throw new Error("No token");
-      return api.getTopFindings(token);
+      return api.getTopFindings(token, repoId);
     },
     enabled: !!isSignedIn,
     staleTime: 2 * 60 * 1000,

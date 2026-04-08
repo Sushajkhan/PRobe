@@ -18,7 +18,8 @@ export default function AnalyticsPage() {
 
   const { data, isPending } = useRepoAnalytics(selectedRepoId);
 
-  const { data: topFindings, isPending: findingsPending } = useTopFindings();
+  const { data: topFindings, isPending: findingsPending } =
+    useTopFindings(selectedRepoId);
 
   return (
     <div className="flex flex-col gap-6 p-6 md:p-8 mx-auto w-full">
