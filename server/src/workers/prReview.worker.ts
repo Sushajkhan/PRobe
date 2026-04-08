@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { Worker, Job } from "bullmq";
 import { redisWorkerOptions } from "../lib/redis";
 import { prisma } from "../lib/prisma";
@@ -7,6 +6,7 @@ import { PR_REVIEW_QUEUE, PRReviewJobData } from "../queues/prReview.queue";
 import { fetchPRDiff, postPRComment } from "../services/github";
 import { uploadDiffToS3 } from "../services/s3";
 import { generateCodeReview } from "../services/gemini";
+import { Worker as BullWorker } from "bullmq";
 
 async function processReview(job: Job<PRReviewJobData>): Promise<void> {
   const {
@@ -136,65 +136,58 @@ async function processReview(job: Job<PRReviewJobData>): Promise<void> {
   );
 }
 
-const worker = new Worker<PRReviewJobData>(PR_REVIEW_QUEUE, processReview, {
-  connection: redisWorkerOptions,
-  concurrency: 3,
-});
+export function startWorker(): BullWorker<PRReviewJobData> {
+  const worker = new Worker<PRReviewJobData>(PR_REVIEW_QUEUE, processReview, {
+    connection: redisWorkerOptions,
+    concurrency: 3,
+  });
 
-worker.on("completed", (job) => {
-  logger.info({ jobId: job.id, reviewId: job.data.reviewId }, "Job completed");
-});
+  worker.on("completed", (job) => {
+    logger.info(
+      { jobId: job.id, reviewId: job.data.reviewId },
+      "Job completed",
+    );
+  });
 
-worker.on("failed", async (job, err) => {
-  if (!job) return;
+  worker.on("failed", async (job, err) => {
+    if (!job) return;
 
-  const isLastAttempt = job.attemptsMade >= (job.opts.attempts ?? 1);
+    const isLastAttempt = job.attemptsMade >= (job.opts.attempts ?? 1);
 
-  logger.error(
-    {
-      jobId: job.id,
-      reviewId: job.data.reviewId,
-      attempt: job.attemptsMade,
-      maxAttempts: job.opts.attempts,
-      error: err.message,
-    },
-    isLastAttempt ? "Job failed permanently" : "Job failed — will retry",
+    logger.error(
+      {
+        jobId: job.id,
+        reviewId: job.data.reviewId,
+        attempt: job.attemptsMade,
+        maxAttempts: job.opts.attempts,
+        error: err.message,
+      },
+      isLastAttempt ? "Job failed permanently" : "Job failed — will retry",
+    );
+
+    if (isLastAttempt) {
+      await prisma.pRReview
+        .update({
+          where: { id: job.data.reviewId },
+          data: { status: "FAILED" },
+        })
+        .catch((dbErr) => {
+          logger.error(
+            { error: dbErr.message },
+            "Failed to mark review as FAILED in DB",
+          );
+        });
+    }
+  });
+
+  worker.on("error", (err) => {
+    logger.error({ error: err.message }, "Worker error");
+  });
+
+  logger.info(
+    { queue: PR_REVIEW_QUEUE, concurrency: 3 },
+    "Worker started — waiting for jobs",
   );
 
-  if (isLastAttempt) {
-    await prisma.pRReview
-      .update({
-        where: { id: job.data.reviewId },
-        data: { status: "FAILED" },
-      })
-      .catch((dbErr) => {
-        logger.error(
-          { error: dbErr.message },
-          "Failed to mark review as FAILED in DB",
-        );
-      });
-  }
-});
-
-worker.on("error", (err) => {
-  logger.error({ error: err.message }, "Worker error");
-});
-
-async function shutdown(signal: string) {
-  logger.info({ signal }, "Shutting down worker...");
-  await worker.close();
-  await prisma.$disconnect();
-  logger.info("Worker shut down cleanly");
-  process.exit(0);
+  return worker;
 }
-
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
-
-logger.info(
-  {
-    queue: PR_REVIEW_QUEUE,
-    concurrency: 3,
-  },
-  "Worker started — waiting for jobs",
-);

@@ -8,10 +8,13 @@ import { ErrorHandler } from "./middleware/error";
 import pinoHttp from "pino-http";
 import logger from "./lib/logger";
 import router from "./routes";
+import { prisma } from "./lib/prisma";
+import { startWorker } from "./workers/prReview.worker";
 
 const PORT = process.env.PORT || 3000;
 
 const app = express();
+
 app.use(
   pinoHttp({
     logger,
@@ -56,8 +59,22 @@ app.use((_req, res) => {
 
 app.use(ErrorHandler);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT} — ${process.env.NODE_ENV}`);
 });
+
+const worker = startWorker();
+
+async function shutdown(signal: string) {
+  logger.info({ signal }, "Shutting down...");
+  server.close();
+  await worker.close();
+  await prisma.$disconnect();
+  logger.info("Shutdown complete");
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 export default app;
