@@ -61,7 +61,7 @@ model PRReview {
   headBranch      String
   diffs3Key       String?   
   summary         String?    @db.Text
-  overallSeverity Severity   @default(CLEAN)
+  overallSeverity Severity?
   status          ReviewStatus   @default(QUEUED)
   processingTime  Int?
   githubCommentId String?
