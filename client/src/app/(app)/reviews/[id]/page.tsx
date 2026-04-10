@@ -15,6 +15,7 @@ import type { Severity } from "@/types";
 import { useMemo } from "react";
 import { FindingsByCategory } from "@/components/reviews/FindingsByCategory";
 import { FilesChanged } from "@/components/reviews/FilesChanged";
+import { SpinnerBadge } from "@/components/reviews/SpinnerBadge";
 
 const SEVERITY_ORDER: Severity[] = [
   "CRITICAL",
@@ -81,7 +82,22 @@ export default function ReviewDetailPage() {
               <h1 className="text-lg font-semibold text-foreground leading-snug">
                 {review?.title}
               </h1>
-              {review && <SeverityBadge severity={review.overallSeverity} />}
+              {review && (
+                <>
+                  {review.status === "COMPLETED" && (
+                    <SeverityBadge severity={review.overallSeverity} />
+                  )}
+                  {review.status === "PROCESSING" && (
+                    <SpinnerBadge severity="ANALYZING" />
+                  )}
+                  {review.status === "QUEUED" && (
+                    <SpinnerBadge severity="QUEUED" />
+                  )}
+                  {review.status === "FAILED" && (
+                    <SpinnerBadge severity="FAILED" />
+                  )}
+                </>
+              )}{" "}
             </div>
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">

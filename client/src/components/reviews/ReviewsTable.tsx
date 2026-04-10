@@ -15,6 +15,7 @@ import { StatusBadge } from "./StatusBadge";
 import { SeverityBadge } from "./SeverityBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { PRReview } from "@/types";
+import { SpinnerBadge } from "./SpinnerBadge";
 
 interface ReviewsTableProps {
   reviews: PRReview[];
@@ -88,7 +89,14 @@ function ReviewRow({ review }: { review: PRReview }) {
       </TableCell>
 
       <TableCell>
-        <SeverityBadge severity={review.overallSeverity} />
+        {review.status === "COMPLETED" && (
+          <SeverityBadge severity={review.overallSeverity} />
+        )}
+        {review.status === "PROCESSING" && (
+          <SpinnerBadge severity="ANALYZING" />
+        )}
+        {review.status === "QUEUED" && <SpinnerBadge severity="QUEUED" />}
+        {review.status === "FAILED" && <SpinnerBadge severity="FAILED" />}{" "}
       </TableCell>
 
       <TableCell>

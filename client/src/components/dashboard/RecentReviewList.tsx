@@ -21,6 +21,67 @@ const severityBadgeClass: Record<Severity, string> = {
   CLEAN: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
 };
 
+function StatusIndicator({ review }: { review: OverviewRecentReview }) {
+  if (review.status === "COMPLETED" && review.overallSeverity) {
+    return (
+      <span
+        className={cn(
+          "h-2 w-2 rounded-full shrink-0",
+          severityDotColor[review.overallSeverity],
+        )}
+      />
+    );
+  }
+  if (review.status === "PROCESSING") {
+    return (
+      <span className="h-2 w-2 rounded-full shrink-0 bg-blue-400 animate-pulse" />
+    );
+  }
+  if (review.status === "FAILED") {
+    return <span className="h-2 w-2 rounded-full shrink-0 bg-red-500/40" />;
+  }
+  return (
+    <span className="h-2 w-2 rounded-full shrink-0 bg-muted-foreground/40" />
+  );
+}
+
+function SeverityBadge({ review }: { review: OverviewRecentReview }) {
+  if (review.status === "COMPLETED" && review.overallSeverity) {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center rounded-full border justify-center px-1.5 py-0.5 text-xs font-semibold  tracking-wide",
+          severityBadgeClass[review.overallSeverity],
+        )}
+      >
+        {review.overallSeverity}
+      </span>
+    );
+  }
+  if (review.status === "PROCESSING") {
+    return (
+      <span className="inline-flex items-center rounded-full border justify-center px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide bg-blue-500/15 text-blue-400 border-blue-500/30">
+        Analyzing...
+      </span>
+    );
+  }
+  if (review.status === "QUEUED") {
+    return (
+      <span className="inline-flex items-center rounded-full border justify-center px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide bg-muted text-muted-foreground border-border">
+        Queued
+      </span>
+    );
+  }
+  if (review.status === "FAILED") {
+    return (
+      <span className="inline-flex items-center rounded-full border justify-center px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide bg-red-500/15 text-red-500 border-red-500/30">
+        Failed
+      </span>
+    );
+  }
+  return null;
+}
+
 function ReviewRow({ review }: { review: OverviewRecentReview }) {
   return (
     <Link
@@ -28,12 +89,7 @@ function ReviewRow({ review }: { review: OverviewRecentReview }) {
       className="group flex items-center justify-between gap-4 px-4 py-3.5 border-b border-border last:border-0 hover:bg-muted/40 transition-colors"
     >
       <div className="flex items-center gap-3 min-w-0">
-        <span
-          className={cn(
-            "h-2 w-2 rounded-full shrink-0",
-            severityDotColor[review.overallSeverity],
-          )}
-        />
+        <StatusIndicator review={review} />
 
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-sm font-medium text-foreground truncate group-hover:text-foreground/90">
@@ -54,17 +110,12 @@ function ReviewRow({ review }: { review: OverviewRecentReview }) {
       </div>
 
       <div className="flex flex-col items-end gap-1 shrink-0">
-        <span
-          className={cn(
-            "inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-semibold tracking-wide",
-            severityBadgeClass[review.overallSeverity],
-          )}
-        >
-          {review.overallSeverity}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {review.totalIssues} {review.totalIssues === 1 ? "issue" : "issues"}
-        </span>
+        <SeverityBadge review={review} />
+        {review.status === "COMPLETED" && (
+          <span className="text-xs text-muted-foreground">
+            {review.totalIssues} {review.totalIssues === 1 ? "issue" : "issues"}
+          </span>
+        )}
       </div>
     </Link>
   );

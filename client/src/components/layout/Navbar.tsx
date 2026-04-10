@@ -2,14 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import {
-  LayoutDashboard,
-  GitPullRequest,
-  BarChart2,
-  Settings,
-  Menu,
-} from "lucide-react";
-import Link from "next/link";
+import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -19,6 +12,13 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import Link from "next/link";
+import {
+  LayoutDashboard,
+  GitPullRequest,
+  BarChart2,
+  Settings,
+} from "lucide-react";
 import { Logo } from "../icons/Logo";
 
 const pageTitles: Record<string, string> = {
@@ -35,24 +35,9 @@ const navItems = [
     icon: LayoutDashboard,
     exact: true,
   },
-  {
-    label: "Reviews",
-    href: "/reviews",
-    icon: GitPullRequest,
-    exact: false,
-  },
-  {
-    label: "Analytics",
-    href: "/analytics",
-    icon: BarChart2,
-    exact: false,
-  },
-  {
-    label: "Settings",
-    href: "/settings",
-    icon: Settings,
-    exact: false,
-  },
+  { label: "Reviews", href: "/reviews", icon: GitPullRequest },
+  { label: "Analytics", href: "/analytics", icon: BarChart2 },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 function MobileNav() {
@@ -63,37 +48,40 @@ function MobileNav() {
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
           <Menu className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
 
-      <SheetContent side="left" className="w-55 p-0">
+      <SheetContent
+        side="left"
+        className="w-64 p-0 bg-background/95 backdrop-blur-xl"
+      >
         <VisuallyHidden>
           <SheetTitle>Menu</SheetTitle>
         </VisuallyHidden>
 
-        <div className="flex items-center gap-2 px-4 h-14 border-b border-border">
+        <div className="flex items-center gap-2 px-4 h-14 border-b border-border/50">
           <Logo className="h-6 w-6" />
-          <span className="text-sm font-semibold tracking-tight">PRobe</span>
+          <span className="text-sm font-semibold">PRobe</span>
         </div>
 
-        <nav className="flex flex-col gap-0.5 p-3">
+        <nav className="flex flex-col gap-1 p-3">
           {navItems.map(({ href, icon: Icon, label, exact }) => {
             const isActive = exact
               ? pathname === href
               : pathname.startsWith(href);
+
             return (
               <Link
                 key={href}
                 href={href}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
                   isActive
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
                 )}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className="h-4 w-4" />
                 {label}
               </Link>
             );
@@ -116,15 +104,16 @@ export function Navbar() {
   })();
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-background/95 backdrop-blur-sm px-4 md:px-6">
+    <header
+      className="sticky top-0 z-10 flex h-14 items-center justify-between
+      px-4 md:px-6 bg-background/70 backdrop-blur-xl border-b border-border/30"
+    >
       <div className="flex items-center gap-3">
         <MobileNav />
-        <span className="text-sm font-medium text-foreground">{title}</span>
+        <h1 className="text-base font-semibold tracking-tight">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-3">
-        <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />
-      </div>
+      <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />
     </header>
   );
 }

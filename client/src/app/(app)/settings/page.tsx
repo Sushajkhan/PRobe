@@ -9,7 +9,7 @@ export default function SettingsPage() {
           Settings
         </h1>
         <p className="text-sm text-muted-foreground">
-          Manage your connected repositories and webhook configurations.
+          All your repositories, managed in one place.{" "}
         </p>
         <div className="h-px bg-border mt-4" />
       </div>

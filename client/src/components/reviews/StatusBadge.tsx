@@ -27,7 +27,10 @@ export function StatusBadge({ status }: { status: ReviewStatus }) {
   return (
     <Badge
       variant="outline"
-      className={cn("w-24  justify-center", config.className)}
+      className={cn(
+        "w-24  justify-center uppercase tracking-wide font-semibold",
+        config.className,
+      )}
     >
       {config.label}
     </Badge>

@@ -17,7 +17,7 @@ interface SeverityBadgeProps {
   dot?: boolean;
 }
 
-export function SeverityBadge({ severity, dot = true }: SeverityBadgeProps) {
+export function SeverityBadge({ severity }: SeverityBadgeProps) {
   return (
     <Badge
       variant="outline"
@@ -26,7 +26,6 @@ export function SeverityBadge({ severity, dot = true }: SeverityBadgeProps) {
         severityClassName[severity],
       )}
     >
-      {dot && <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0" />}
       {severity}
     </Badge>
   );
