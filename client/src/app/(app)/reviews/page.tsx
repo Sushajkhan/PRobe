@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -22,7 +23,7 @@ function FiltersSkeleton() {
   );
 }
 
-export default function ReviewsPage() {
+function ReviewsContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -110,5 +111,13 @@ export default function ReviewsPage() {
         onPageChange={handlePageChange}
       />
     </div>
+  );
+}
+
+export default function ReviewsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ReviewsContent />
+    </Suspense>
   );
 }
