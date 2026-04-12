@@ -9,9 +9,9 @@ RUN npm ci --workspace=server
 FROM deps AS generate
 WORKDIR /app
 
-COPY server/prisma ./server/prisma
-COPY server/prisma.config.ts ./server/prisma.config.ts
-COPY server/tsconfig.json ./server/tsconfig.json
+COPY prisma ./prisma
+COPY prisma.config.ts ./prisma.config.ts
+COPY tsconfig.json ./tsconfig.json
 
 RUN cd server && npx prisma generate
 
