@@ -18,8 +18,7 @@ RUN cd server && npx prisma generate
 FROM generate AS runner
 WORKDIR /app
 
-COPY server/src ./server/src
-
+COPY src ./src
 WORKDIR /app/server
 
 ENV NODE_ENV=production
