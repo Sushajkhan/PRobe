@@ -18,7 +18,7 @@ RUN cd server && npx prisma generate
 FROM generate AS runner
 WORKDIR /app
 
-COPY server/src ./server/src
+COPY server/src ./src
 
 WORKDIR /app/server
 
