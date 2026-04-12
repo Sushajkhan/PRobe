@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 export function Hero() {
   return (
@@ -22,16 +23,29 @@ export function Hero() {
       </p>
 
       <div className="flex items-center justify-center gap-4">
-        <Button size="lg" className="rounded-full px-10 h-12 font-semibold">
-          Get started free
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          className="rounded-full h-12 px-10 font-medium"
-        >
-          View the demo
-        </Button>
+        <Link href="/sign-in">
+          <Button size="lg" className="rounded-full px-10 h-12 font-semibold">
+            Get started free
+          </Button>
+        </Link>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-6 mt-24 text-sm">
+        {[
+          { value: "< 10s", label: "Avg analysis time" },
+          { value: "99%", label: "Issue detection rate" },
+          { value: "2x", label: "Faster reviews" },
+          { value: "100%", label: "Pull request coverage" },
+        ].map((item, i) => (
+          <div
+            key={i}
+            className="px-6 py-4 rounded-2xl border bg-muted/40 backdrop-blur-sm 
+                 hover:bg-muted/70 transition-all hover:scale-[1.03] hover:shadow-md"
+          >
+            <p className="text-xl font-bold tracking-tight">{item.value}</p>
+            <p className="text-muted-foreground text-xs mt-1">{item.label}</p>
+          </div>
+        ))}
       </div>
     </section>
   );
