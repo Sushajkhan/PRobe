@@ -1,7 +1,6 @@
 "use client";
 
 import { Logo } from "@/components/icons/Logo";
-import { GithubPermissionsCard } from "@/components/landing/GithubPermissions";
 import { SignIn } from "@clerk/nextjs";
 import Link from "next/link";
 
