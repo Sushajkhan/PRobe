@@ -34,10 +34,16 @@ export function ErrorHandler(
 
   // Handle app errors
   if (err instanceof AppError) {
-    logger.error(`${req.method} ${req.path} - ${err.message}`, {
-      code: err.code,
-      stack: err.stack,
-    });
+    logger.error(
+      {
+        method: req.method,
+        path: req.path,
+        code: err.code,
+        stack: err.stack,
+      },
+      err.message,
+    );
+
     res.status(err.statusCode).json({
       success: false,
       error: {
@@ -48,12 +54,19 @@ export function ErrorHandler(
     return;
   }
 
-  // handle unknown errors
+  // Handle unknown errors
   const message =
     err instanceof Error ? err.message : "An unexpected error occurred";
   const stack = err instanceof Error ? err.stack : undefined;
 
-  logger.error(`${req.method} ${req.path} — ${message}`, { stack });
+  logger.error(
+    {
+      method: req.method,
+      path: req.path,
+      stack,
+    },
+    message,
+  );
 
   res.status(500).json({
     success: false,
