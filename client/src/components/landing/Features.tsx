@@ -44,24 +44,55 @@ const features = [
 
 export function Features() {
   return (
-    <section id="features" className="mt-24 border-t">
-      <div className="grid grid-cols-1 md:grid-cols-3 border-l">
+    <section id="features" className="py-28">
+      <div className="text-center mb-16">
+        <span className="inline-block text-xs font-bold text-primary uppercase tracking-[0.2em] mb-4">
+          Features
+        </span>
+        <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+          Everything you need for{" "}
+          <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            better code
+          </span>
+        </h2>
+        <p className="text-muted-foreground mt-4 max-w-lg mx-auto text-sm leading-relaxed">
+          Powerful features that integrate seamlessly with your existing
+          workflow. No setup required.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {features.map((f, i) => (
           <div
             key={i}
-            className="p-10 border-r border-b transition-colors group relative overflow-hidden hover:bg-muted/50"
+            className="group relative p-8 rounded-2xl
+              border border-border/50 bg-background/50 backdrop-blur-sm
+              hover:bg-background/80 hover:border-primary/20
+              hover:shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.15)]
+              transition-all duration-300"
           >
-            <div className="absolute top-0 left-0 w-1 h-0 bg-primary transition-all duration-300 group-hover:h-full" />
+            <div
+              className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/[0.03] to-transparent
+                opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+            />
 
-            <div className="mb-6">
-              <f.icon className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+            <div className="relative">
+              <div
+                className="mb-5 inline-flex items-center justify-center w-11 h-11 rounded-xl
+                  bg-primary/[0.08] group-hover:bg-primary/[0.12]
+                  transition-colors duration-300"
+              >
+                <f.icon className="h-5 w-5 text-primary/80 group-hover:text-primary transition-colors" />
+              </div>
+
+              <h4 className="text-sm font-semibold mb-2.5 tracking-tight">
+                {f.title}
+              </h4>
+
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {f.desc}
+              </p>
             </div>
-
-            <h4 className="text-sm font-semibold mb-2">{f.title}</h4>
-
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {f.desc}
-            </p>
           </div>
         ))}
       </div>
